@@ -95,14 +95,17 @@ ${def_code_list.join('\n')}
     `
 }
 
-
-function generate_def_code(func_name, req_params, rsp_params)
-{
-    return `
+function generate_def_codes(functions) {
+    const def_str_list = functions.map((func, index) => {
+        const {func_name, req_params, rsp_params} = func;
+        return `
 def ${func_name}(${generate_params_str_list(req_params)}):
     # TODO:
     ${generate_return_rsp_params_code(rsp_params)}
 `;
+    });
+
+    return def_str_list.join('');
 }
 
 function generate_call_code(func_name, req_params, rsp_params)
@@ -112,51 +115,92 @@ function generate_call_code(func_name, req_params, rsp_params)
     return `${rsp_param_str} = ${func_name}(${req_param_str})`;
 }
 
+function generate_call_codes(functions)
+{
+    const call_str_list = functions.map((func, index) => {
+        const {func_name, req_params, rsp_params} = func;
+
+        const deserialization_code_with_less_indent = generate_deserialization_code(req_params);
+        const deserialization_code = deserialization_code_with_less_indent.replace(/[ ]{8}/g, ' '.repeat(12));
+        const call_code = generate_call_code(func_name, req_params, rsp_params);
+        const rsp_code = generate_rsp_code(rsp_params);
+
+        if (index === 0) {
+            return `
+        (func_index,) = struct.unpack('=i', readed(4)) 
+        rsp_buffer = ''
+        if func_index == ${index}:
+            ${deserialization_code}
+            ${call_code}
+            _type = 0
+            written(struct.pack('=i', _type))
+            written(struct.pack('=i', sid))
+            rsp_buffer += struct.pack('=i', func_index)
+            ${rsp_code}
+            `;
+        }
+        else {
+            return `
+        elif func_index == ${index}:
+            ${deserialization_code}
+            ${call_code}
+            _type = 0
+            written(struct.pack('=i', _type))
+            written(struct.pack('=i', sid))
+            rsp_buffer += struct.pack('=i', func_index)
+            ${rsp_code}
+            `;
+        }
+    });
+
+    return call_str_list.join('');
+}
+
 function generate_rsp_code(rsp_params)
 {
     return rsp_params.map((param, index) => {
         const {name, type} = param;
         if (type === 'long') {
             return `
-        rsp_buffer += struct.pack('=i', ${name})
+            rsp_buffer += struct.pack('=i', ${name})
             `;
         } else if (type === 'float') {
             return `
-        rsp_buffer += struct.pack('=f', ${name})
+            rsp_buffer += struct.pack('=f', ${name})
             `;
         } else if (type === 'string') {
             return `
-        str_len_${index} = len(${name})
-        rsp_buffer += struct.pack('=i', str_len_${index})
-        rsp_buffer += ${name}
+            str_len_${index} = len(${name})
+            rsp_buffer += struct.pack('=i', str_len_${index})
+            rsp_buffer += ${name}
             `;
         } else if (type === 'vector_string') {
             return `
-        v_cnt_${index} = len(${name})
-        rsp_buffer += struct.pack('=i', v_cnt_${index})
-        total_len_${index} = len(${name}) * 4
-        for i in xrange(len(${name})):
-            total_len_${index} += len(${name}[i])
-        rsp_buffer += struct.pack('=i', total_len_${index})
-        
-        for i in xrange(len(${name})):
-            tmp_len = len(${name}[i])
-            rsp_buffer += struct.pack('=i', tmp_len)
-            rsp_buffer += ${name}[i]
+            v_cnt_${index} = len(${name})
+            rsp_buffer += struct.pack('=i', v_cnt_${index})
+            total_len_${index} = len(${name}) * 4
+            for i in xrange(len(${name})):
+                total_len_${index} += len(${name}[i])
+            rsp_buffer += struct.pack('=i', total_len_${index})
+            
+            for i in xrange(len(${name})):
+                tmp_len = len(${name}[i])
+                rsp_buffer += struct.pack('=i', tmp_len)
+                rsp_buffer += ${name}[i]
         `;
         } else if (type === 'vector_long') {
             return `
-        v_cnt_${index} = len(${name})
-        rsp_buffer += struct.pack('=i', v_cnt_${index})
-        for i in xrange(len(${name})):
-            rsp_buffer += struct.pack('=i', ${name}[i])
+            v_cnt_${index} = len(${name})
+            rsp_buffer += struct.pack('=i', v_cnt_${index})
+            for i in xrange(len(${name})):
+                rsp_buffer += struct.pack('=i', ${name}[i])
         `;
         } else if (type === 'vector_float') {
             return `
-        v_cnt_${index} = len(${name})
-        rsp_buffer += struct.pack('=i', v_cnt_${index})
-        for i in xrange(len(${name})):
-            rsp_buffer += struct.pack('=f', ${name}[i])
+            v_cnt_${index} = len(${name})
+            rsp_buffer += struct.pack('=i', v_cnt_${index})
+            for i in xrange(len(${name})):
+                rsp_buffer += struct.pack('=f', ${name}[i])
         `;
         } else {
             throw new Error(`type '${type}' not supported.`);
@@ -168,15 +212,13 @@ function generate_initialization_args(init_params) {
     return generate_params_str_list(init_params, []);
 }
 
-function generate_python(func_name, req_params, rsp_params, init_params, desc, version)
+function generate_python(class_name, init_params, functions, desc, version)
 {
-    const deserialization_code = generate_deserialization_code(req_params);
-    const def_code = generate_def_code(func_name, req_params, rsp_params);
-    const call_code = generate_call_code(func_name, req_params, rsp_params);
-    const rsp_code = generate_rsp_code(rsp_params);
+    const def_code = generate_def_codes(functions);
     const initialization_args = generate_initialization_args(init_params);
     const init_deserialization_code = generate_deserialization_code(init_params);
     const init_call_code = generate_call_code("initialize", init_params, []);
+    const call_code = generate_call_codes(functions);
     const code = `#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # **********************************************************************
@@ -247,13 +289,9 @@ if __name__ == '__main__':
     while True:
         (buf_len,) = struct.unpack('=i', readed(4))
         (sid,) = struct.unpack('=i', readed(4))
-        ${deserialization_code}
+
         ${call_code}
-        _type = 0
-        written(struct.pack('=i', _type))
-        written(struct.pack('=i', sid))
-        rsp_buffer = ''
-        ${rsp_code}
+
         rsp_buffer_len = len(rsp_buffer)
         written(struct.pack('=i', rsp_buffer_len))
         written(rsp_buffer)

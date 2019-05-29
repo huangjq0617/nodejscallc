@@ -4,6 +4,9 @@ function tidy_code(code) {
     for (let i = 0, len = arr.length; i < len; ++ i) {
         if (!(0 === arr[i].trim().length)) {
             ret.push(arr[i].replace(/\n/g, ''));
+            if (/^\}(\s+)?;?$/.test(arr[i].trimRight())) {
+                ret.push('');
+            }
         }
     }
     return ret.join('\n');

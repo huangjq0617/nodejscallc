@@ -19,7 +19,7 @@ function generate_deserialization_code(params) {
         }`;
         } else if (type === 'string' || type === 'buffer') {
             return `
-        long len_${index} = 0;
+        int32_t len_${index} = 0;
         read_size = readed(fd0, (char *)&len_${index}, 4);
         if (read_size < 0) {
             break;
@@ -33,12 +33,12 @@ function generate_deserialization_code(params) {
         delete []buffer_${index};`;
         } else if (type === 'vector_string') {
             return `
-        long vector_cnt_${index} = 0;
+        int32_t vector_cnt_${index} = 0;
         read_size = readed(fd0, (char *)&vector_cnt_${index}, 4);
         if (read_size < 0) {
             break;
         }
-        long vector_len_${index} = 0;
+        int32_t vector_len_${index} = 0;
         read_size = readed(fd0, (char *)&vector_len_${index}, 4);
         if (read_size < 0) {
             break;
@@ -50,35 +50,35 @@ function generate_deserialization_code(params) {
         if (read_size < 0) {
             break;
         }
-        int *_v_len_${index} = (int *)buffer_${index};
+        int32_t *_v_len_${index} = (int32_t *)buffer_${index};
         char *_buffer_${index} = (char *)buffer_${index} + 4;
-        for (long i = 0; i < vector_cnt_${index}; ++ i) {
+        for (int32_t i = 0; i < vector_cnt_${index}; ++ i) {
             ${name}.push_back(std::string(_buffer_${index}, *_v_len_${index}));
             _buffer_${index} += *_v_len_${index} + 4 ;
-            _v_len_${index} = (int *)(_buffer_${index} - 4);
+            _v_len_${index} = (int32_t *)(_buffer_${index} - 4);
         }
         delete []buffer_${index};`;
         } else if (type === 'vector_long') {
             return `
-        long vector_cnt_${index} = 0;
+        int32_t vector_cnt_${index} = 0;
         read_size = readed(fd0, (char *)&vector_cnt_${index}, 4);
         if (read_size < 0) {
             break;
         }
-        std::vector<int> ${name};
+        std::vector<int32_t> ${name};
         ${name}.reserve(vector_cnt_${index});
-        int *buffer_${index} = new int[vector_cnt_${index}];
+        int32_t *buffer_${index} = new int32_t[vector_cnt_${index}];
         read_size = readed(fd0, (char *)buffer_${index}, vector_cnt_${index}*4);
         if (read_size < 0) {
             break;
         }
-        for (long i = 0; i < vector_cnt_${index}; ++ i) {
+        for (int32_t i = 0; i < vector_cnt_${index}; ++ i) {
             ${name}.push_back(buffer_${index}[i]);
         }
         delete []buffer_${index};`;
         } else if (type === 'vector_float') {
             return `
-        long vector_cnt_${index} = 0;
+        int32_t vector_cnt_${index} = 0;
         read_size = readed(fd0, (char *)&vector_cnt_${index}, 4);
         if (read_size < 0) {
             break;
@@ -90,7 +90,7 @@ function generate_deserialization_code(params) {
         if (read_size < 0) {
             break;
         }
-        for (long i = 0; i < vector_cnt_${index}; ++ i) {
+        for (int32_t i = 0; i < vector_cnt_${index}; ++ i) {
             ${name}.push_back(buffer_${index}[i]);
         }
         delete []buffer_${index};`;
@@ -104,7 +104,7 @@ function generate_params_str_list(req_params, rsp_params) {
     const req_params_str_list = req_params.map((param) => {
         const {name, type} = param;
         if (type === 'long') {
-            return `long ${name}`;
+            return `int32_t ${name}`;
         } else if (type === 'float') {
             return `float ${name}`;
         } else if (type === 'string' || type === 'buffer') {
@@ -112,7 +112,7 @@ function generate_params_str_list(req_params, rsp_params) {
         } else if (type === 'vector_string') {
             return `const std::vector<std::string> & ${name}`;
         } else if (type === 'vector_long') {
-            return `const std::vector<int> & ${name}`;
+            return `const std::vector<int32_t> & ${name}`;
         } else if (type === 'vector_float') {
             return `const std::vector<float> & ${name}`;
         } else {
@@ -122,7 +122,7 @@ function generate_params_str_list(req_params, rsp_params) {
     const rsp_params_str_list = rsp_params.map((param) => {
         const {name, type} = param;
         if (type === 'long') {
-            return `long & ${name}`;
+            return `int32_t & ${name}`;
         } else if (type === 'float') {
             return `float & ${name}`;
         } else if (type === 'string') {
@@ -130,7 +130,7 @@ function generate_params_str_list(req_params, rsp_params) {
         } else if (type === 'vector_string') {
             return `std::vector<std::string> & ${name}`;
         } else if (type === 'vector_long') {
-            return `std::vector<int> & ${name}`;
+            return `std::vector<int32_t> & ${name}`;
         } else if (type === 'vector_float') {
             return `std::vector<float> & ${name}`;
         } else {
@@ -145,15 +145,33 @@ function generate_def_code_without_body(func_name, req_params, rsp_params)
     return `void ${func_name}(${generate_params_str_list(req_params, rsp_params)})`;
 }
 
-function generate_def_code(func_name, req_params, rsp_params)
+function generate_def_codes_without_body(functions)
 {
-    
-    return `
+    const def_str_list = functions.map((func) => {
+        const {func_name, req_params, rsp_params} = func;
+
+        return `
+${generate_def_code_without_body(func_name, req_params, rsp_params)};
+        `;
+    });
+
+    return def_str_list.join('');
+}
+
+function generate_def_codes(functions)
+{
+    const def_str_list = functions.map((func) => {
+        const {func_name, req_params, rsp_params} = func;
+
+        return `
 ${generate_def_code_without_body(func_name, req_params, rsp_params)}
 {
     // TODO:
 }
 `;
+    });
+
+    return def_str_list.join('');
 }
 
 function generate_call_code(func_name, req_params, rsp_params)
@@ -168,27 +186,27 @@ function generate_rsp_params_def_code(rsp_params)
         const {name, type} = param;
         if (type === 'long') {
             return `
-        long ${name};
+            int32_t ${name};
             `;
         } else if (type === 'float') {
             return `
-        float ${name};
+            float ${name};
             `;
         } else if (type === 'string') {
             return `
-        std::string ${name};
+            std::string ${name};
             `;
         } else if (type === 'vector_string') {
             return `
-        std::vector<std::string> ${name};
+            std::vector<std::string> ${name};
             `;
         } else if (type === 'vector_long') {
             return `
-        std::vector<int> ${name};
+            std::vector<int32_t> ${name};
             `
         } else if (type === 'vector_float') {
             return `
-        std::vector<float> ${name};
+            std::vector<float> ${name};
             `
         } else {
             throw new Error(`type '${type}' not supported.`);
@@ -202,48 +220,48 @@ function generate_rsp_code(rsp_params)
         const {name, type} = param;
         if (type === 'long') {
             return `
-        rsp_buffer.append((char*)&${name}, 4);
+            rsp_buffer.append((char*)&${name}, 4);
             `;
         } else if (type === 'float') {
             return `
-        rsp_buffer.append((char*)&${name}, 4);
+            rsp_buffer.append((char*)&${name}, 4);
             `;
         } else if (type === 'string') {
             return `
-        long str_len_${index} = ${name}.length();
-        rsp_buffer.append((char*)&str_len_${index}, 4);
-        rsp_buffer.append((char*)${name}.c_str(), str_len_${index});
+            int32_t str_len_${index} = ${name}.length();
+            rsp_buffer.append((char*)&str_len_${index}, 4);
+            rsp_buffer.append((char*)${name}.c_str(), str_len_${index});
             `;
         } else if (type === 'vector_string') {
             return `
-        long v_cnt_${index} = ${name}.size();
-        rsp_buffer.append((char*)&v_cnt_${index}, 4);
-        long total_len_${index} = ${name}.size() * 4;
-        for (size_t i = 0, len = ${name}.size(); i < len; ++ i) {
-            total_len_${index} += ${name}[i].length();
-        }
-        rsp_buffer.append((char*)&total_len_${index}, 4);
-        for (size_t i = 0, len = ${name}.size(); i < len; ++ i) {
-            long tmp_len = (long)${name}[i].length();
-            rsp_buffer.append((char *)&tmp_len, 4);
-            rsp_buffer.append(${name}[i].c_str(), ${name}[i].length());
-        }
+            int32_t v_cnt_${index} = ${name}.size();
+            rsp_buffer.append((char*)&v_cnt_${index}, 4);
+            int32_t total_len_${index} = ${name}.size() * 4;
+            for (size_t i = 0, len = ${name}.size(); i < len; ++ i) {
+                total_len_${index} += ${name}[i].length();
+            }
+            rsp_buffer.append((char*)&total_len_${index}, 4);
+            for (size_t i = 0, len = ${name}.size(); i < len; ++ i) {
+                int32_t tmp_len = (int32_t)${name}[i].length();
+                rsp_buffer.append((char *)&tmp_len, 4);
+                rsp_buffer.append(${name}[i].c_str(), ${name}[i].length());
+            }
         `;
         } else if (type === 'vector_long') {
             return `
-        long v_cnt_${index} = ${name}.size();
-        rsp_buffer.append((char*)&v_cnt_${index}, 4);
-        for (size_t i = 0, len = ${name}.size(); i < len; ++ i) {
-            rsp_buffer.append((char *)&${name}[i], 4);
-        }
+            int32_t v_cnt_${index} = ${name}.size();
+            rsp_buffer.append((char*)&v_cnt_${index}, 4);
+            for (size_t i = 0, len = ${name}.size(); i < len; ++ i) {
+                rsp_buffer.append((char *)&${name}[i], 4);
+            }
             `;
         } else if (type === 'vector_float') {
             return `
-        long v_cnt_${index} = ${name}.size();
-        rsp_buffer.append((char*)&v_cnt_${index}, 4);
-        for (size_t i = 0, len = ${name}.size(); i < len; ++ i) {
-            rsp_buffer.append((char *)&${name}[i], 4);
-        }
+            int32_t v_cnt_${index} = ${name}.size();
+            rsp_buffer.append((char*)&v_cnt_${index}, 4);
+            for (size_t i = 0, len = ${name}.size(); i < len; ++ i) {
+                rsp_buffer.append((char *)&${name}[i], 4);
+            }
             `;
         } else {
             throw new Error(`type '${type}' not supported.`);
@@ -251,20 +269,66 @@ function generate_rsp_code(rsp_params)
     }).join('\n');
 }
 
+function generate_call_codes(functions) {
+
+    const call_str_list = functions.map((func, index) => {
+        const {func_name, req_params, rsp_params} = func;
+        const deserialization_code_with_less_indent = generate_deserialization_code(req_params);
+        const deserialization_code = deserialization_code_with_less_indent.replace(/[ ]{8}/g, ' '.repeat(12));
+        const rsp_params_def_code = generate_rsp_params_def_code(rsp_params);
+        const call_code = generate_call_code(func_name, req_params, rsp_params);
+        const rsp_code = generate_rsp_code(rsp_params);
+
+        if (index === 0) {
+            return `
+        int32_t func_index = -1;
+        read_size = readed(fd0, (char *)&func_index, 4);
+        if (read_size < 0) {
+            break;
+        }
+        std::string rsp_buffer;
+        if (func_index == ${index}) {
+            ${deserialization_code}
+            ${rsp_params_def_code}
+            ${call_code}
+            int32_t type = 0;
+            written(fd1, (char*)&type, 4);
+            written(fd1, (char*)&sid, 4);
+            rsp_buffer.append((char*)&func_index, 4);
+            ${rsp_code}
+        }
+            `;
+        }
+        else {
+            return `
+        else if (func_index == ${index}) {
+            ${deserialization_code}
+            ${rsp_params_def_code}
+            ${call_code}
+            int32_t type = 0;
+            written(fd1, (char*)&type, 4);
+            written(fd1, (char*)&sid, 4);
+            rsp_buffer.append((char*)&func_index, 4);
+            ${rsp_code}            
+        }
+            `;
+        }
+    });
+
+    return call_str_list.join('');
+}
+
 function generate_initialization_args(init_params) {
     return generate_params_str_list(init_params, []);
 }
 
-function generate_c(func_name, req_params, rsp_params, init_params, desc, version)
+function generate_c(class_name, init_params, functions, desc, version)
 {
-    const deserialization_code = generate_deserialization_code(req_params);
-    const def_code = generate_def_code(func_name, req_params, rsp_params);
-    const call_code = generate_call_code(func_name, req_params, rsp_params);
-    const rsp_params_def_code = generate_rsp_params_def_code(rsp_params);
-    const rsp_code = generate_rsp_code(rsp_params);
+    const def_code = generate_def_codes(functions);
     const initialization_args = generate_initialization_args(init_params);
     const init_deserialization_code = generate_deserialization_code(init_params);
     const init_call_code = generate_call_code("initialize", init_params, []);
+    const call_code = generate_call_codes(functions);
 
     const comment = `// **********************************************************************
 // This file was generated by a NodejsCallC parser!
@@ -272,31 +336,32 @@ function generate_c(func_name, req_params, rsp_params, init_params, desc, versio
 // Generated from ${desc} at ${(new Date()).toString()}
 // **********************************************************************`;
     const c_imp_code = `${comment}
-#include "${func_name}_header.h"
+#include "${class_name}_header.h"
 ${def_code}`;
     const c_init_code = `${comment}
-#include "${func_name}_header.h"
+#include "${class_name}_header.h"
 void initialize(${initialization_args})
 {
     // TODO initialize
 }`;
     const c_header_code = `${comment}
-#ifndef ${func_name.toUpperCase()}_H
-#define ${func_name.toUpperCase()}_H
+#ifndef ${class_name.toUpperCase()}_H
+#define ${class_name.toUpperCase()}_H
 #include <string>
 #include <vector>
 #include <sstream>
 #include <iostream>
+#include <cstdint>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 void dbg_log(const std::string & msg);
 void initialize(${initialization_args});
-${generate_def_code_without_body(func_name, req_params, rsp_params)};
+${generate_def_codes_without_body(functions)}
 #endif
 `;
     const c_pipe_code = `${comment}
-#include "${func_name}_header.h"
+#include "${class_name}_header.h"
 #include <string>
 #include <vector>
 #include <sstream>
@@ -337,9 +402,9 @@ int written(int fd, char* write_buffer, int length)
 
 void dbg_log(const std::string & msg)
 {
-    long type = 1;
-    long sid = 0;
-    long buffer_len = msg.length();
+    int32_t type = 1;
+    int32_t sid = 0;
+    int32_t buffer_len = msg.length();
     written(fd1, (char*)&type, 4);
     written(fd1, (char*)&sid, 4);
     written(fd1, (char*)&buffer_len, 4);
@@ -348,9 +413,9 @@ void dbg_log(const std::string & msg)
 
 void ready()
 {
-    long type = 2;
-    long sid = 0;
-    long buffer_len = 1;
+    int32_t type = 2;
+    int32_t sid = 0;
+    int32_t buffer_len = 1;
     written(fd1, (char*)&type, 4);
     written(fd1, (char*)&sid, 4);
     written(fd1, (char*)&buffer_len, 4);
@@ -358,7 +423,7 @@ void ready()
 }
 
 int main()
-{   
+{
     fd0 = dup(0);
     fd1 = dup(1);
     close(0);
@@ -366,8 +431,8 @@ int main()
     bool initialized = false;
     while (true)
     {
-        long buf_len = 0;
-        long read_size = readed(fd0, (char *)&buf_len, 4);
+        int32_t buf_len = 0;
+        int32_t read_size = readed(fd0, (char *)&buf_len, 4);
         if (read_size <= 0) {
             break;
         }
@@ -384,25 +449,20 @@ int main()
     }
     
     while (true) {
-        long buf_len = 0;
-        long read_size = readed(fd0, (char *)&buf_len, 4);
+        int32_t buf_len = 0;
+        int32_t read_size = readed(fd0, (char *)&buf_len, 4);
         if (read_size <= 0) {
             break;
         }
-        long sid = 0;
+        int32_t sid = 0;
         read_size = readed(fd0, (char *)&sid, 4);
         if (read_size <= 0) {
             break;
         }
-        ${deserialization_code}
-        ${rsp_params_def_code}
+
         ${call_code}
-        long type = 0;
-        written(fd1, (char*)&type, 4);
-        written(fd1, (char*)&sid, 4);
-        std::string rsp_buffer;
-        ${rsp_code}
-        long rsp_buffer_len = rsp_buffer.length();
+
+        int32_t rsp_buffer_len = rsp_buffer.length();
         written(fd1, (char*)&rsp_buffer_len, 4);
         written(fd1, (char*)rsp_buffer.c_str(), rsp_buffer_len);
     }
