@@ -159,7 +159,7 @@ ${class_name}.prototype.${func_name} = function(req, cb) {
     len_buffer.writeInt32(buffer_len);
     this.child.stdin.write(len_buffer);
     this.child.stdin.write(buffer);
-}
+};
         `;
     });
 
@@ -252,7 +252,7 @@ function ${class_name}(init_req, init_env) {
     this.on_ready = () => {};
     this.child_close = () => {
         process.exit();
-    }
+    };
     this.child.stdout.on('data', (data) => {
         this.buffer = Buffer.concat([this.buffer, data]);
         while (0 < this.buffer.length) {
@@ -298,13 +298,13 @@ ${class_name}.prototype.ready = function(cb) {
     } else {
         this.on_ready = cb;
     }
-}
+};
 
 ${class_name}.prototype.on_child_close = function(cb) {
     if (cb) {
         this.child_close = cb;
     }
-}
+};
 
 ${class_name}.prototype.initialize = function(req) {
     let buffer = Buffer.alloc(0);
@@ -314,7 +314,7 @@ ${class_name}.prototype.initialize = function(req) {
     len_buffer.writeInt32(buffer_len);
     this.child.stdin.write(len_buffer);
     this.child.stdin.write(buffer);
-}
+};
 
 module.exports = ${class_name};
     `;

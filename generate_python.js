@@ -296,7 +296,7 @@ if __name__ == '__main__':
         written(struct.pack('=i', rsp_buffer_len))
         written(rsp_buffer)
 `;
-    return tidy_code(code);
+    return tidy_code(code, true);
 }
 
 module.exports = generate_python;
