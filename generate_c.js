@@ -351,7 +351,7 @@ void initialize(${initialization_args})
 #include <vector>
 #include <sstream>
 #include <iostream>
-#include <cstdint>
+#include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
