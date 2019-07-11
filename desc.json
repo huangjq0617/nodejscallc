@@ -1,6 +1,6 @@
 {
-    "func_name" : "test",
-    "init_params" : [
+    "class_name" : "Test", //在c或者python中要实现的接口名称
+    "init_params" : [     //初始化参数列表
         {
             "name" : "init_param_long",
             "type" : "long"
@@ -26,56 +26,61 @@
             "type" : "vector_float"
         }
     ],
-    "req_params" : [
+    "functions": [
         {
-            "name" : "param_long",
-            "type" : "long"
-        },
-        {
-            "name" : "param_float",
-            "type" : "float"
-        },
-        {
-            "name" : "param_string",
-            "type" : "string"
-        },
-        {
-            "name" : "param_vector_string",
-            "type" : "vector_string"
-        },
-        {
-            "name" : "param_vector_long",
-            "type" : "vector_long"
-        },
-        {
-            "name" : "param_vector_float",
-            "type" : "vector_float"
-        }
-    ],
-    "rsp_params" : [
-        {
-            "name" : "rsp_param_string",
-            "type" : "string"
-        },
-        {
-            "name" : "rsp_param_long",
-            "type" : "long"
-        },
-        {
-            "name" : "rsp_param_float",
-            "type" : "float"
-        },
-        {
-            "name" : "rsp_param_vector_string",
-            "type" : "vector_string"
-        },
-        {
-            "name" : "rsp_param_vector_long",
-            "type" : "vector_long"
-        },
-        {
-            "name" : "rsp_param_vector_float",
-            "type" : "vector_float"
+            "func_name" : "func1",
+            "req_params" : [    //传入参数列表
+                {
+                    "name" : "param_long",
+                    "type" : "long"
+                },
+                {
+                    "name" : "param_float",
+                    "type" : "float"
+                },
+                {
+                    "name" : "param_string",
+                    "type" : "string"
+                },
+                {
+                    "name" : "param_vector_string",
+                    "type" : "vector_string"
+                },
+                {
+                    "name" : "param_vector_long",
+                    "type" : "vector_long"
+                },
+                {
+                    "name" : "param_vector_float",
+                    "type" : "vector_float"
+                }
+            ],
+            "rsp_params" : [    //返回参数列表
+                {
+                    "name" : "rsp_param_string",
+                    "type" : "string"
+                },
+                {
+                    "name" : "rsp_param_long",
+                    "type" : "long"
+                },
+                {
+                    "name" : "rsp_param_float",
+                    "type" : "float",
+                },
+                {
+                    "name" : "rsp_param_vector_string",
+                    "type" : "vector_string"
+                },
+                {
+                    "name" : "rsp_param_vector_long",
+                    "type" : "vector_long"
+                },
+                {
+                    "name" : "rsp_param_vector_float",
+                    "type" : "vector_float"
+                }
+            ]
         }
     ]
 }
