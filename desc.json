@@ -1,6 +1,6 @@
 {
-    "class_name" : "Test", //在c或者python中要实现的接口名称
-    "init_params" : [     //初始化参数列表
+    "class_name" : "Test",
+    "init_params" : [
         {
             "name" : "init_param_long",
             "type" : "long"
@@ -29,7 +29,7 @@
     "functions": [
         {
             "func_name" : "func1",
-            "req_params" : [    //传入参数列表
+            "req_params" : [
                 {
                     "name" : "param_long",
                     "type" : "long"
@@ -55,7 +55,7 @@
                     "type" : "vector_float"
                 }
             ],
-            "rsp_params" : [    //返回参数列表
+            "rsp_params" : [
                 {
                     "name" : "rsp_param_string",
                     "type" : "string"
