@@ -3,7 +3,7 @@ const tidy_code = require('./tidy_code');
 function generate_serialization_code(params) {
     return params.map((param, index) => {
         const {name, type} = param;
-        if (type === 'long') {
+        if (type === 'int32') {
             return `
     const buffer_${index} = Buffer.alloc(4);
     buffer_${index}.writeInt32(req.${name});
@@ -47,7 +47,7 @@ function generate_serialization_code(params) {
     len_buffer_${index}.writeInt32(vbuffer_${index}.byteLength);
     buffer = Buffer.concat([buffer, len_buffer_cnt_${index}, len_buffer_${index}, vbuffer_${index}]);
     `;
-        } else if (type === 'vector_long') {
+        } else if (type === 'vector_int32') {
             return `
     const vbuffer_${index} = Buffer.concat(req.${name}.map((num) => {
         const _num_buffer = Buffer.alloc(4);
@@ -78,58 +78,58 @@ function generate_serialization_code(params) {
 function generate_deserialization_code(rsp_params) {
     return rsp_params.map((param, index) => {
         const {name, type} = param;
-        if (type === 'long') {
+        if (type === 'int32') {
             return `
-                    rsp.${name} = buffer.readInt32();
-                    buffer = buffer.slice(4);
+    rsp.${name} = buffer.readInt32();
+    buffer = buffer.slice(4);
                 `;
         } else if (type === 'float') {
             return `
-                    rsp.${name} = buffer.readFloat();
-                    buffer = buffer.slice(4);
+    rsp.${name} = buffer.readFloat();
+    buffer = buffer.slice(4);
                 `;
         } else if (type === 'string') {
             return `
-                    const str_len_${index} = buffer.readInt32();
-                    buffer = buffer.slice(4);
-                    rsp.${name} = buffer.slice(0, str_len_${index}).toString();
-                    buffer = buffer.slice(str_len_${index});
+    const str_len_${index} = buffer.readInt32();
+    buffer = buffer.slice(4);
+    rsp.${name} = buffer.slice(0, str_len_${index}).toString();
+    buffer = buffer.slice(str_len_${index});
                 `;
         } else if (type === 'vector_string') {
             return `
-                    const v_cnt_${index} = buffer.readInt32();
-                    buffer = buffer.slice(4);
-                    const buffer_len_${index} = buffer.readInt32();
-                    buffer = buffer.slice(4);
-                    rsp.${name} = [];
-                    for (let i = 0; i < v_cnt_${index}; ++ i) {
-                        const tmp_len = buffer.readInt32();
-                        buffer = buffer.slice(4);
-                        rsp.${name}.push(buffer.slice(0, tmp_len).toString());
-                        buffer = buffer.slice(tmp_len);
-                    }
+    const v_cnt_${index} = buffer.readInt32();
+    buffer = buffer.slice(4);
+    const buffer_len_${index} = buffer.readInt32();
+    buffer = buffer.slice(4);
+    rsp.${name} = [];
+    for (let i = 0; i < v_cnt_${index}; ++ i) {
+        const tmp_len = buffer.readInt32();
+        buffer = buffer.slice(4);
+        rsp.${name}.push(buffer.slice(0, tmp_len).toString());
+        buffer = buffer.slice(tmp_len);
+    }
             `;
-        } else if (type === 'vector_long') {
+        } else if (type === 'vector_int32') {
             return `
-                    const v_cnt_${index} = buffer.readInt32();
-                    buffer = buffer.slice(4);
-                    rsp.${name} = [];
-                    for (let i = 0; i < v_cnt_${index}; ++ i) {
-                        const num = buffer.readInt32();
-                        buffer = buffer.slice(4);
-                        rsp.${name}.push(num);
-                    }
+    const v_cnt_${index} = buffer.readInt32();
+    buffer = buffer.slice(4);
+    rsp.${name} = [];
+    for (let i = 0; i < v_cnt_${index}; ++ i) {
+        const num = buffer.readInt32();
+        buffer = buffer.slice(4);
+        rsp.${name}.push(num);
+    }
             `;
         } else if (type === 'vector_float') {
             return `
-                    const v_cnt_${index} = buffer.readInt32();
-                    buffer = buffer.slice(4);
-                    rsp.${name} = [];
-                    for (let i = 0; i < v_cnt_${index}; ++i) {
-                        const num = buffer.readFloat();
-                        buffer = buffer.slice(4);
-                        rsp.${name}.push(num);
-                    }
+    const v_cnt_${index} = buffer.readInt32();
+    buffer = buffer.slice(4);
+    rsp.${name} = [];
+    for (let i = 0; i < v_cnt_${index}; ++i) {
+        const num = buffer.readFloat();
+        buffer = buffer.slice(4);
+        rsp.${name}.push(num);
+    }
             `;
         } else {
             throw new Error(`type '${type}' not supported.`);
@@ -172,15 +172,16 @@ function generate_js_funcs_deserialization_code(functions) {
         const deserialization_code = generate_deserialization_code(rsp_params);
         if (index === 0) {
             return `
-                const func_index = buffer.readInt32();
-                buffer = buffer.slice(4);
-                if (func_index === ${index}) {
-                ${deserialization_code}}
+    if (func_index === ${index}) {
+        ${deserialization_code}
+    }
             `;
         }
         else {
             return `
-                else if (func_index === ${index}) {${deserialization_code}}
+    else if (func_index === ${index}) {
+        ${deserialization_code}
+    }
             `;
         }
     });
@@ -268,7 +269,15 @@ function ${class_name}(init_req, init_env) {
             let buffer = this.buffer.slice(12, buffer_len+12);
             const rsp = {};
             if (type === 0) {
-                ${deserialization_code}
+                const func_index = buffer.readInt32();
+                const error_code = buffer.readInt32(4);
+                buffer = buffer.slice(8);
+                if (error_code !== 0) {
+                    rsp.errorCode = error_code;
+                }
+                else {
+                    ${deserialization_code}
+                }
                 this.context[sid].cb(rsp);
                 delete this.context[sid];
             } else if (type === 1) {

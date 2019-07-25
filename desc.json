@@ -2,8 +2,8 @@
     "class_name" : "Test",
     "init_params" : [
         {
-            "name" : "init_param_long",
-            "type" : "long"
+            "name" : "init_param_int",
+            "type" : "int32"
         },
         {
             "name" : "init_param_float",
@@ -18,8 +18,8 @@
             "type" : "vector_string"
         },
         {
-            "name" : "init_param_vector_long",
-            "type" : "vector_long"
+            "name" : "init_param_vector_int",
+            "type" : "vector_int32"
         },
         {
             "name" : "init_param_vector_float",
@@ -31,24 +31,12 @@
             "func_name" : "func1",
             "req_params" : [
                 {
-                    "name" : "param_long",
-                    "type" : "long"
-                },
-                {
-                    "name" : "param_float",
-                    "type" : "float"
+                    "name" : "param_int",
+                    "type" : "int32"
                 },
                 {
                     "name" : "param_string",
                     "type" : "string"
-                },
-                {
-                    "name" : "param_vector_string",
-                    "type" : "vector_string"
-                },
-                {
-                    "name" : "param_vector_long",
-                    "type" : "vector_long"
                 },
                 {
                     "name" : "param_vector_float",
@@ -61,9 +49,32 @@
                     "type" : "string"
                 },
                 {
-                    "name" : "rsp_param_long",
-                    "type" : "long"
+                    "name" : "rsp_param_int",
+                    "type" : "int32"
                 },
+                {
+                    "name" : "rsp_param_vector_float",
+                    "type" : "vector_float"
+                }
+            ]
+        },
+        {
+            "func_name" : "func2",
+            "req_params" : [
+                {
+                    "name" : "param_float",
+                    "type" : "float"
+                },
+                {
+                    "name" : "param_vector_string",
+                    "type" : "vector_string"
+                },
+                {
+                    "name" : "param_vector_int",
+                    "type" : "vector_int32"
+                }
+            ],
+            "rsp_params" : [
                 {
                     "name" : "rsp_param_float",
                     "type" : "float"
@@ -73,12 +84,8 @@
                     "type" : "vector_string"
                 },
                 {
-                    "name" : "rsp_param_vector_long",
-                    "type" : "vector_long"
-                },
-                {
-                    "name" : "rsp_param_vector_float",
-                    "type" : "vector_float"
+                    "name" : "rsp_param_vector_int",
+                    "type" : "vector_int32"
                 }
             ]
         }
